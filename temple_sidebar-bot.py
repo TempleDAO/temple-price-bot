@@ -27,8 +27,7 @@ def get_data():
       }                                                                                 
     }"""
 
-    url = "https://api.thegraph.com/subgraphs/name/medariox/temple-balances"
-
+    url = "https://api.thegraph.com/subgraphs/name/templedao/templedao-balances"
     response = requests.post(url, json={'query': query})
     data = response.json()
     metrics = data['data']['dayProtocolMetrics'][0]
