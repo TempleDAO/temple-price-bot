@@ -58,6 +58,7 @@ def get_data():
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
+REFRESH_RATE_S = int(os.getenv('REFRESH_RATE_S', 60))
 client = discord.Client()
 
 
@@ -87,7 +88,7 @@ async def _refresh_price():
     for guild in client.guilds:
         await guild.me.edit(nick=nickname)
 
-@tasks.loop(seconds=float(60))
+@tasks.loop(seconds=REFRESH_RATE_S)
 async def refresh_price():
     try:
         await _refresh_price()
