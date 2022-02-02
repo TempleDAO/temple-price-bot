@@ -7,6 +7,10 @@ from dotenv import load_dotenv
 import math
 
 
+class PriceFetchError(Exception):
+    ...
+
+
 def millify(n):
     millnames = ['', 'K', 'M', 'B', 'T']
     n = float(n)
@@ -29,7 +33,17 @@ def get_data():
 
     url = "https://api.thegraph.com/subgraphs/name/templedao/templedao-balances"
     response = requests.post(url, json={'query': query})
-    data = response.json()
+
+    try:
+        data = response.json()
+    except:
+        raise PriceFetchError("Invalid response from API: {response.text}")
+
+
+    if response.status_code != 200 or 'errors' in data:
+        raise PriceFetchError(f"Error fetching price {response.text}")
+
+
     metrics = data['data']['dayProtocolMetrics'][0]
 
     data_dict = {
@@ -53,18 +67,32 @@ async def on_ready():
     refresh_price.start()
 
 
-@tasks.loop(seconds=float(60))
-async def refresh_price():
-    data = get_data()
-    templeprice = data['templePrice']
-    ogtprice = data['ogTemplePrice']
-    marketcap = millify(float(data['marketCap']))
-    rfv = data['riskFreeValue']
-
-    nickname = f'T ${templeprice} | RFV ${rfv}'
-    await client.change_presence(activity=discord.Game(name=f'MktC. ${marketcap} | OG ${ogtprice}'))
+async def _refresh_price():
+    print("Refreshing price")
+    try:
+        data = get_data()
+    except Exception as err:
+        print(err)
+        nickname = 'ERROR'
+        activity = 'ERROR'
+    else:
+        templeprice = data['templePrice']
+        ogtprice = data['ogTemplePrice']
+        marketcap = millify(float(data['marketCap']))
+        rfv = data['riskFreeValue']
+        nickname = f'T ${templeprice} | RFV ${rfv}'
+        activity = f'MktC. ${marketcap} | OG ${ogtprice}'
+    print(f"New stats {nickname} || {activity}")
+    await client.change_presence(activity=discord.Game(name=activity))
     for guild in client.guilds:
         await guild.me.edit(nick=nickname)
+
+@tasks.loop(seconds=float(60))
+async def refresh_price():
+    try:
+        await _refresh_price()
+    except Exception as err:
+        print(f"ERROR: refreshing price {err}")
 
 
 # text commands
