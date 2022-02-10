@@ -31,7 +31,7 @@ def get_data():
       }                                                                                 
     }"""
 
-    url = "https://api.thegraph.com/subgraphs/name/templedao/templedao-balances"
+    url = "https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics"
     response = requests.post(url, json={'query': query})
 
     try:
