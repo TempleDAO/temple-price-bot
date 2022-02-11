@@ -26,8 +26,9 @@ def get_data():
         templePrice                                                                     
         ogTemplePrice                                                                   
         marketCap                                                                       
-        riskFreeValue                                                                   
-        intrinsicValue                                                                  
+        templeCirculatingSupply
+        stakedTemple
+        lockedTemple                                                                  
       }                                                                                 
     }"""
 
@@ -50,7 +51,9 @@ def get_data():
         'ogTemplePrice': metrics['ogTemplePrice'][:4],
         'templePrice': metrics['templePrice'][:4],
         'marketCap': metrics['marketCap'][:12],
-        'riskFreeValue': metrics['riskFreeValue'][:4]
+        'templeCirculatingSupply': metrics['templeCirculatingSupply'][:12],
+        'stakedTemple': metrics['stakedTemple'][:12],
+        'lockedTemple': metrics['lockedTemple'][:12]
     }
 
     return data_dict
@@ -80,9 +83,12 @@ async def _refresh_price():
         templeprice = data['templePrice']
         ogtprice = data['ogTemplePrice']
         marketcap = millify(float(data['marketCap']))
-        rfv = data['riskFreeValue']
-        nickname = f'T ${templeprice} | RFV ${rfv}'
-        activity = f'MktC. ${marketcap} | OG ${ogtprice}'
+        stakedTemple = float(data['stakedTemple'])
+        templeCirculatingSupply = float(data['templeCirculatingSupply'])
+        perc_staked = "{0:.0%}".format((stakedTemple / templeCirculatingSupply))
+
+        nickname = f'T ${templeprice} | OG ${ogtprice}'
+        activity = f'Stkd {perc_staked} | MktC. ${marketcap}'
     print(f"New stats {nickname} || {activity}")
     await client.change_presence(activity=discord.Game(name=activity))
     for guild in client.guilds:
