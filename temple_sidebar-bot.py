@@ -88,7 +88,7 @@ async def _refresh_price():
         perc_staked = "{0:.0%}".format((stakedTemple / templeCirculatingSupply))
 
         nickname = f'T ${templeprice} | OG ${ogtprice}'
-        activity = f'Stkd {perc_staked} | MktC. ${marketcap}'
+        activity = f'MktC. ${marketcap}'
     print(f"New stats {nickname} || {activity}")
     await client.change_presence(activity=discord.Game(name=activity))
     for guild in client.guilds:
