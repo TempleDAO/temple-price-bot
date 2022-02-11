@@ -24,11 +24,11 @@ def get_data():
     query = """query {                                                                  
       dayProtocolMetrics(first: 1, orderBy: timestamp, orderDirection: desc) {          
         templePrice                                                                     
-        ogTemplePrice                                                                   
+        ogTemplePrice
+        ogTempleSupply
+        ogTempleRatio                                                                   
         marketCap                                                                       
-        templeCirculatingSupply
-        stakedTemple
-        lockedTemple                                                                  
+        templeCirculatingSupply                                                                  
       }                                                                                 
     }"""
 
@@ -49,11 +49,11 @@ def get_data():
 
     data_dict = {
         'ogTemplePrice': metrics['ogTemplePrice'][:4],
+        'ogTempleSupply': metrics['ogTempleSupply'][:12],
+        'ogTempleRatio': metrics['ogTempleRatio'][:4],
         'templePrice': metrics['templePrice'][:4],
         'marketCap': metrics['marketCap'][:12],
-        'templeCirculatingSupply': metrics['templeCirculatingSupply'][:12],
-        'stakedTemple': metrics['stakedTemple'][:12],
-        'lockedTemple': metrics['lockedTemple'][:12]
+        'templeCirculatingSupply': metrics['templeCirculatingSupply'][:12]
     }
 
     return data_dict
@@ -83,12 +83,12 @@ async def _refresh_price():
         templeprice = data['templePrice']
         ogtprice = data['ogTemplePrice']
         marketcap = millify(float(data['marketCap']))
-        stakedTemple = float(data['stakedTemple'])
+        ogTempleSupply = float(data['ogTempleSupply'])
+        ogTempleRatio = float(data['ogTempleRatio'])
         templeCirculatingSupply = float(data['templeCirculatingSupply'])
-        perc_staked = "{0:.0%}".format((stakedTemple / templeCirculatingSupply))
-
+        perc_staked = "{0:.0%}".format((ogTempleSupply * ogTempleRatio / templeCirculatingSupply))
         nickname = f'T ${templeprice} | OG ${ogtprice}'
-        activity = f'MktC. ${marketcap}'
+        activity = f'Stkd {perc_staked} | MktC. ${marketcap}'
     print(f"New stats {nickname} || {activity}")
     await client.change_presence(activity=discord.Game(name=activity))
     for guild in client.guilds:
