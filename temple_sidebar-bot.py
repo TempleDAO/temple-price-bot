@@ -22,13 +22,14 @@ def millify(n):
 
 def get_data():
     query = """query {                                                                  
-      dayProtocolMetrics(first: 1, orderBy: timestamp, orderDirection: desc) {          
+      dayProtocolMetrics(first: 2, orderBy: timestamp, orderDirection: desc) {          
         templePrice                                                                     
         ogTemplePrice
         ogTempleSupply
         ogTempleRatio                                                                   
         marketCap                                                                       
-        templeCirculatingSupply                                                                  
+        templeCirculatingSupply
+        farmEarnings                                                                  
       }                                                                                 
     }"""
 
@@ -46,6 +47,7 @@ def get_data():
 
 
     metrics = data['data']['dayProtocolMetrics'][0]
+    prev_metrics = data['data']['dayProtocolMetrics'][1]
 
     data_dict = {
         'ogTemplePrice': metrics['ogTemplePrice'][:4],
@@ -53,7 +55,9 @@ def get_data():
         'ogTempleRatio': metrics['ogTempleRatio'][:4],
         'templePrice': metrics['templePrice'][:4],
         'marketCap': metrics['marketCap'][:12],
-        'templeCirculatingSupply': metrics['templeCirculatingSupply'][:12]
+        'templeCirculatingSupply': metrics['templeCirculatingSupply'][:12],
+        'farmRewards_today': metrics['farmEarnings'][:12],
+        'farmRewards_yesterday': prev_metrics['farmEarnings'][:12]
     }
 
     return data_dict
@@ -87,8 +91,15 @@ async def _refresh_price():
         ogTempleRatio = float(data['ogTempleRatio'])
         templeCirculatingSupply = float(data['templeCirculatingSupply'])
         perc_staked = "{0:.0%}".format((ogTempleSupply * ogTempleRatio / templeCirculatingSupply))
+        dailyFarmEarnings = float(data['farmRewards_today']) - float(data['farmRewards_yesterday'])
+        if dailyFarmEarnings < 0:
+            dailyFarmEarnings = millify(float(data['farmRewards_today']))
+        else:
+            dailyFarmEarnings = millify(dailyFarmEarnings)
+
         nickname = f'T ${templeprice} | OG ${ogtprice}'
-        activity = f'Stkd {perc_staked} | MktC. ${marketcap}'
+        activity = f'Rwrds ${dailyFarmEarnings} | Stkd {perc_staked}'
+
     print(f"New stats {nickname} || {activity}")
     await client.change_presence(activity=discord.Game(name=activity))
     for guild in client.guilds:
