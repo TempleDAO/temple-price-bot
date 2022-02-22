@@ -5,6 +5,7 @@ from discord.ext.commands import Bot
 import os
 from dotenv import load_dotenv
 import math
+from loguru import logger
 
 
 class PriceFetchError(Exception):
@@ -91,16 +92,14 @@ async def _refresh_price():
         ogTempleRatio = float(data['ogTempleRatio'])
         templeCirculatingSupply = float(data['templeCirculatingSupply'])
         perc_staked = "{0:.0%}".format((ogTempleSupply * ogTempleRatio / templeCirculatingSupply))
-        dailyFarmEarnings = float(data['farmRewards_today']) - float(data['farmRewards_yesterday'])
-        if dailyFarmEarnings < 0:
-            dailyFarmEarnings = millify(float(data['farmRewards_today']))
-        else:
-            dailyFarmEarnings = millify(dailyFarmEarnings)
+        dailyFarmEarnings = millify(float(data['farmRewards_today']))
 
         nickname = f'T ${templeprice} | OG ${ogtprice}'
         activity = f'Rwrds ${dailyFarmEarnings} | Stkd {perc_staked}'
 
     print(f"New stats {nickname} || {activity}")
+    logger.info("New stats {nickname} || {activity}", nickname=nickname, activity=activity)
+
     await client.change_presence(activity=discord.Game(name=activity))
     for guild in client.guilds:
         await guild.me.edit(nick=nickname)
