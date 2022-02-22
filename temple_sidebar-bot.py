@@ -91,7 +91,7 @@ async def _refresh_price():
         ogTempleSupply = float(data['ogTempleSupply'])
         ogTempleRatio = float(data['ogTempleRatio'])
         templeCirculatingSupply = float(data['templeCirculatingSupply'])
-        perc_staked = "{0:.0%}".format((ogTempleSupply * ogTempleRatio / templeCirculatingSupply))
+        perc_staked = "{0:.0%}".format((ogTempleSupply * ogTempleRatio / templeCirculatingSupply)
         dailyFarmEarnings = millify(float(data['farmRewards_today']))
 
         nickname = f'T ${templeprice} | OG ${ogtprice}'
