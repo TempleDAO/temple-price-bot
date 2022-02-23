@@ -75,7 +75,7 @@ def get_data():
 
 @client.event
 async def on_ready():
-    print(f'{client.user} has connected to Discord!')
+    logger.info(f'{client.user} has connected to Discord!')
     refresh_price.start()
 
 
@@ -100,7 +100,6 @@ async def _refresh_price():
         nickname = f'T ${templeprice} | OG ${ogtprice}'
         activity = f'Rwrds ${dailyFarmEarnings} | Stkd {perc_staked}'
 
-    print(f"New stats {nickname} || {activity}")
     logger.info("New stats {nickname} || {activity}", nickname=nickname, activity=activity)
 
     await client.change_presence(activity=discord.Game(name=activity))
