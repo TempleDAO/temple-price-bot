@@ -5,7 +5,15 @@ from discord.ext.commands import Bot
 import os
 from dotenv import load_dotenv
 import math
+load_dotenv()
 from loguru import logger
+import sys
+
+
+TOKEN = os.getenv('DISCORD_TOKEN')
+REFRESH_RATE_S = int(os.getenv('REFRESH_RATE_S', 60))
+client = discord.Client()
+
 
 
 class PriceFetchError(Exception):
@@ -64,11 +72,6 @@ def get_data():
     return data_dict
 
 
-load_dotenv()
-TOKEN = os.getenv('DISCORD_TOKEN')
-REFRESH_RATE_S = int(os.getenv('REFRESH_RATE_S', 60))
-client = discord.Client()
-
 
 @client.event
 async def on_ready():
@@ -77,11 +80,11 @@ async def on_ready():
 
 
 async def _refresh_price():
-    print("Refreshing price")
+    logger.info("Refreshing price")
     try:
         data = get_data()
     except Exception as err:
-        print(err)
+        logger.exception('Error refreshing price')
         nickname = 'ERROR'
         activity = 'ERROR'
     else:
