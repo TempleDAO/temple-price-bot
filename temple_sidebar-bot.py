@@ -98,7 +98,7 @@ async def _refresh_price():
         dailyFarmEarnings = millify(float(data['farmRewards_today']))
 
         nickname = f'T ${templeprice} | OG ${ogtprice}'
-        activity = f'Rwrds ${dailyFarmEarnings} | Stkd {perc_staked}'
+        activity = f'Farmed ${dailyFarmEarnings} | S {perc_staked}'
 
     logger.info("New stats {nickname} || {activity}", nickname=nickname, activity=activity)
 
