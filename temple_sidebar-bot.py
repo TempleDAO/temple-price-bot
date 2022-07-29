@@ -135,18 +135,11 @@ async def _refresh_price():
         activity = 'ERROR'
     else:
         templeprice = metrics_data['templePrice']
-        ogtprice = metrics_data['ogTemplePrice']
-        marketcap = millify(metrics_data['marketCap'])
-        ogTempleSupply = metrics_data['ogTempleSupply']
-        ogTempleRatio = metrics_data['ogTempleRatio']
-        templeCirculatingSupply = metrics_data['templeCirculatingSupply']
-        perc_staked = '{0:.0%}'.format((ogTempleSupply * ogTempleRatio / templeCirculatingSupply))
-        dailyFarmEarnings = millify(metrics_data['farmRewards_today'])
         vault_tvl = millify(vault_data['tvl'])
         vault_apy = vault_data['apy']
 
         nickname = f'${templeprice}︱TVL ${vault_tvl}'
-        activity = f'APY {vault_apy}%︱F ${dailyFarmEarnings}'
+        activity = f'APY {vault_apy}%'
     
     logger.info("New stats {nickname} || {activity}", nickname=nickname, activity=activity)
 
