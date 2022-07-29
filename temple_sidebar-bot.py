@@ -138,12 +138,12 @@ async def _refresh_price():
         vault_tvl = millify(vault_data['tvl'])
         vault_apy = vault_data['apy']
 
-        nickname = f'${templeprice}︱TVL ${vault_tvl}'
+        nickname = f'${templeprice} | TVL ${vault_tvl}'
         activity = f'APY {vault_apy}%'
     
     logger.info("New stats {nickname} || {activity}", nickname=nickname, activity=activity)
 
-    await client.change_presence(activity=discord.Game(name=activity))
+    await client.change_presence(activity=discord.Activity(name=activity, type=discord.ActivityType.watching))
     for guild in client.guilds:
         await guild.me.edit(nick=nickname)
 
