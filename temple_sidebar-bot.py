@@ -146,7 +146,7 @@ async def _refresh_price():
         vault_apy = vault_data['apy']
 
         nickname = f'T ${templeprice} | TVL ${vault_tvl}'
-        activity = f'Farmed ${dailyFarmEarnings} | APY {vault_apy}%'
+        activity = f'APY {vault_apy}% | Farmed ${dailyFarmEarnings}'
     
     logger.info("New stats {nickname} || {activity}", nickname=nickname, activity=activity)
 
