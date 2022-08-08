@@ -107,7 +107,7 @@ def get_vault_data(vault_group, days):
 
     tvl = float(data['data']['vaultGroup']['tvlUSD'])
     apr = (daily_avg_ernings / tvl) * 365 * 100;
-    apy = ((1 + (apr / 100) / 12) ** 12 - 1) * 100;
+    apy = ((1 + (apr / 100) / 13) ** 13 - 1) * 100;
 
     data_dict = {
         'tvl': round2d(tvl),
