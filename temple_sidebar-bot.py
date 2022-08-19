@@ -145,7 +145,10 @@ async def _refresh_price():
 
     await client.change_presence(activity=discord.Activity(name=activity, type=discord.ActivityType.watching))
     for guild in client.guilds:
-        await guild.me.edit(nick=nickname)
+        try:
+            await guild.me.edit(nick=nickname)
+        except Exception as err:
+            logger.info(f"ERROR: {err} in guild {guild.id} {guild.name}")
 
 @tasks.loop(seconds=REFRESH_RATE_S)
 async def refresh_price():
