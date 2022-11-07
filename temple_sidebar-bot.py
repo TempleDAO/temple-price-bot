@@ -132,15 +132,13 @@ async def _refresh_price():
     except Exception as err:
         logger.exception('Error refreshing price')
         nickname = 'ERROR'
-        activity = 'ERROR'
     else:
         templeprice = metrics_data['templePrice']
         vault_tvl = millify(vault_data['tvl'])
-        vault_apy = vault_data['apy']
 
         nickname = f'${templeprice} | TVL ${vault_tvl}'
-        activity = f'APY {vault_apy}%'
-    
+    activity = f'TPF rise'
+
     logger.info("New stats {nickname} || {activity}", nickname=nickname, activity=activity)
 
     await client.change_presence(activity=discord.Activity(name=activity, type=discord.ActivityType.watching))
