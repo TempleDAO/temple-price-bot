@@ -137,7 +137,7 @@ async def _refresh_price():
         vault_tvl = millify(vault_data['tvl'])
 
         nickname = f'${templeprice} | TVL ${vault_tvl}'
-    activity = f'TPF rise'
+    activity = f'TPI rise'
 
     logger.info("New stats {nickname} || {activity}", nickname=nickname, activity=activity)
 
