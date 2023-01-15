@@ -50,7 +50,7 @@ def get_json_data(url, query):
 
 def get_metrics_data():
     query = """query {
-      dayProtocolMetrics(first: 2, orderBy: timestamp, orderDirection: desc) {
+      dayProtocolMetrics(first: 1, orderBy: timestamp, orderDirection: desc) {
         templePrice
         ogTemplePrice
         ogTempleSupply
@@ -66,53 +66,11 @@ def get_metrics_data():
     data = get_json_data(url, query)
 
     metrics = data['data']['dayProtocolMetrics'][0]
-    prev_metrics = data['data']['dayProtocolMetrics'][1]
 
     data_dict = {
-        'ogTemplePrice': round2d(metrics['ogTemplePrice']),
-        'ogTempleSupply': round2d(metrics['ogTempleSupply']),
-        'ogTempleRatio': round2d(metrics['ogTempleRatio']),
-        'templePrice': round2d(metrics['templePrice']),
+        'templePrice': round(float(metrics['templePrice']), 3),
         'marketCap': round2d(metrics['marketCap']),
         'templeCirculatingSupply': round2d(metrics['templeCirculatingSupply']),
-        'farmRewards_today': round2d(metrics['farmEarnings']),
-        'farmRewards_yesterday': round2d(prev_metrics['farmEarnings'])
-    }
-
-    return data_dict
-
-
-def get_vault_data(vault_group, days):
-    query = f"""query {{
-      dayProtocolMetrics(first: {days}, orderBy: timestamp, orderDirection: desc) {{
-          totalFarmEarnings
-        }}
-    }}"""
-
-    url = "https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics"
-    data = get_json_data(url, query)
-
-    first_day_earnings = float(data['data']['dayProtocolMetrics'][-1]['totalFarmEarnings'])
-    last_day_earnings = float(data['data']['dayProtocolMetrics'][0]['totalFarmEarnings'])
-    daily_avg_ernings = (last_day_earnings - first_day_earnings) / days;
-
-    query = f"""query {{
-      vaultGroup(id: "{vault_group}") {{
-          tvlUSD
-        }}
-    }}"""
-
-    url = "https://api.thegraph.com/subgraphs/name/templedao/templedao-core"
-    data = get_json_data(url, query)
-
-    tvl = float(data['data']['vaultGroup']['tvlUSD'])
-    apr = (daily_avg_ernings / tvl) * 365 * 100;
-    apy = ((1 + (apr / 100) / 13) ** 13 - 1) * 100;
-
-    data_dict = {
-        'tvl': round2d(tvl),
-        'apr': round2d(apr),
-        'apy': round2d(apy)
     }
 
     return data_dict
@@ -128,15 +86,13 @@ async def _refresh_price():
     logger.info("Refreshing price")
     try:
         metrics_data = get_metrics_data()
-        vault_data = get_vault_data(vault_group='1m-core', days=14)
     except Exception as err:
         logger.exception('Error refreshing price')
         nickname = 'ERROR'
     else:
         templeprice = metrics_data['templePrice']
-        vault_tvl = millify(vault_data['tvl'])
 
-        nickname = f'${templeprice} | TVL ${vault_tvl}'
+        nickname = f'${templeprice}'
     activity = f'TPI rise'
 
     logger.info("New stats {nickname} || {activity}", nickname=nickname, activity=activity)
