@@ -94,7 +94,7 @@ async def _refresh_price():
         templeprice = metrics_data['templePrice']
         treasury_value = millify(metrics_data['treasuryValue'], 1)
 
-        nickname = f'${templeprice} | Treasury ${treasury_value}'
+        nickname = f'${templeprice} | ${treasury_value}'
     activity = f'TPI rise'
 
     logger.info("New stats {nickname} || {activity}", nickname=nickname, activity=activity)
