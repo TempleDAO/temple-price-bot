@@ -20,17 +20,17 @@ class PriceFetchError(Exception):
     ...
 
 
-def millify(n):
+def millify(n, precision):
     millnames = ['', 'K', 'M', 'B', 'T']
     n = float(n)
     millidx = max(0, min(len(millnames)-1,
                          int(math.floor(0 if n == 0 else math.log10(abs(n))/3))))
 
-    return '{:.0f}{}'.format(n / 10**(3 * millidx), millnames[millidx])
+    return '{:.{precision}f}{}'.format(n / 10**(3 * millidx), millnames[millidx], precision=precision)
 
 
-def round2d(n):
-    return round(float(n), 2)
+def roundf(n, precision):
+    return '{:.{precision}f}'.format(float(n), precision=precision)
 
 
 def get_json_data(url, query):
@@ -50,27 +50,28 @@ def get_json_data(url, query):
 
 def get_metrics_data():
     query = """query {
-      dayProtocolMetrics(first: 1, orderBy: timestamp, orderDirection: desc) {
+      metricDailySnapshots(first: 1, orderBy: timestamp, orderDirection: desc) {
         templePrice
         ogTemplePrice
         ogTempleSupply
         ogTempleRatio
         marketCap
         templeCirculatingSupply
-        farmEarnings
-        totalFarmEarnings
+        treasuryValueUSD
+        treasuryPriceIndex
       }
     }"""
 
-    url = "https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics"
+    url = "https://api.thegraph.com/subgraphs/name/medariox/temple-metrics"
     data = get_json_data(url, query)
 
-    metrics = data['data']['dayProtocolMetrics'][0]
+    metrics = data['data']['metricDailySnapshots'][0]
 
     data_dict = {
-        'templePrice': round(float(metrics['templePrice']), 3),
-        'marketCap': round2d(metrics['marketCap']),
-        'templeCirculatingSupply': round2d(metrics['templeCirculatingSupply']),
+        'templePrice': roundf(metrics['templePrice'], 3),
+        'marketCap': roundf(metrics['marketCap'], 2),
+        'treasuryValue': roundf(metrics['treasuryValueUSD'], 2),
+        'tpi': roundf(metrics['treasuryPriceIndex'], 3),
     }
 
     return data_dict
@@ -91,8 +92,9 @@ async def _refresh_price():
         nickname = 'ERROR'
     else:
         templeprice = metrics_data['templePrice']
+        treasury_value = millify(metrics_data['treasuryValue'], 1)
 
-        nickname = f'${templeprice}'
+        nickname = f'${templeprice} | ${treasury_value}'
     activity = f'TPI rise'
 
     logger.info("New stats {nickname} || {activity}", nickname=nickname, activity=activity)
@@ -103,6 +105,7 @@ async def _refresh_price():
             await guild.me.edit(nick=nickname)
         except Exception as err:
             logger.info(f"ERROR: {err} in guild {guild.id} {guild.name}")
+
 
 @tasks.loop(seconds=REFRESH_RATE_S)
 async def refresh_price():
