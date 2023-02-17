@@ -47,16 +47,31 @@ def get_json_data(url, query):
 
     return data
 
+def get_arbitrum_metrics_data():
+    query = """
+    query {
+        metrics(first: 1, orderBy: timestamp, orderDirection: desc) {
+        treasuryValueUSD,
+        timestamp,
+        }
+    } """
 
-def get_metrics_data():
+    url = "https://api.thegraph.com/subgraphs/name/medariox/temple-metrics-arbitrum"
+    data = get_json_data(url, query)
+
+    metrics = data['data']['metrics'][0]
+
+    data_dict = {
+        'treasuryValue': float(metrics['treasuryValueUSD']),
+    }
+
+    return data_dict
+
+
+def get_mainnet_metrics_data():
     query = """query {
       metricDailySnapshots(first: 1, orderBy: timestamp, orderDirection: desc) {
         templePrice
-        ogTemplePrice
-        ogTempleSupply
-        ogTempleRatio
-        marketCap
-        templeCirculatingSupply
         treasuryValueUSD
         treasuryPriceIndex
       }
@@ -69,8 +84,7 @@ def get_metrics_data():
 
     data_dict = {
         'templePrice': roundf(metrics['templePrice'], 3),
-        'marketCap': roundf(metrics['marketCap'], 2),
-        'treasuryValue': roundf(metrics['treasuryValueUSD'], 2),
+        'treasuryValue': float(metrics['treasuryValueUSD']),
         'tpi': roundf(metrics['treasuryPriceIndex'], 3),
     }
 
@@ -86,13 +100,14 @@ async def on_ready():
 async def _refresh_price():
     logger.info("Refreshing price")
     try:
-        metrics_data = get_metrics_data()
+        mainnet_data = get_mainnet_metrics_data()
+        arbitrum_data = get_arbitrum_metrics_data()
     except Exception as err:
         logger.exception('Error refreshing price')
         nickname = 'ERROR'
     else:
-        templeprice = metrics_data['templePrice']
-        treasury_value = millify(metrics_data['treasuryValue'], 1)
+        templeprice = mainnet_data['templePrice']
+        treasury_value = millify(mainnet_data['treasuryValue'] + arbitrum_data['treasuryValue'], 1)
 
         nickname = f'${templeprice} | ${treasury_value}'
     activity = f'TPI rise'
