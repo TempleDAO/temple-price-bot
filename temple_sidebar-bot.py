@@ -56,7 +56,7 @@ def get_arbitrum_metrics_data():
         }
     } """
 
-    url = "https://api.thegraph.com/subgraphs/name/medariox/temple-metrics-arbitrum"
+    url = "https://api.studio.thegraph.com/query/76011/temple-metrics-arbitrum/version/latest"
     data = get_json_data(url, query)
 
     metrics = data['data']['metrics'][0]
@@ -77,7 +77,7 @@ def get_mainnet_metrics_data():
       }
     }"""
 
-    url = "https://api.thegraph.com/subgraphs/name/medariox/temple-metrics"
+    url = "https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-metrics/api"
     data = get_json_data(url, query)
 
     metrics = data['data']['metricDailySnapshots'][0]
