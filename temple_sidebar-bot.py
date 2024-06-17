@@ -11,7 +11,7 @@ import sys
 
 
 TOKEN = os.getenv('DISCORD_TOKEN')
-REFRESH_RATE_S = int(os.getenv('REFRESH_RATE_S', 60))
+REFRESH_RATE_S = int(os.getenv('REFRESH_RATE_S', 90))
 client = discord.Client()
 
 
@@ -47,48 +47,39 @@ def get_json_data(url, query):
 
     return data
 
-def get_arbitrum_metrics_data():
-    query = """
-    query {
-        metrics(first: 1, orderBy: timestamp, orderDirection: desc) {
-        treasuryValueUSD,
-        timestamp,
-        }
-    } """
 
-    url = "https://api.studio.thegraph.com/query/76011/temple-metrics-arbitrum/version/latest"
+def get_tvl():
+
+    query = """query MyQuery {
+  treasuryReservesVaults {
+    principalUSD
+    benchmarkedEquityUSD
+  }
+}
+"""
+
+    url = "https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-balances/api"
+
+    data = get_json_data(url, query)
+    metrics = data['data']['treasuryReservesVaults'][0]
+    tvl = float(metrics["principalUSD"]) + float(metrics['benchmarkedEquityUSD'])
+    return tvl
+
+
+
+def get_spot_price():
+    query = """query {
+          metrics {
+            spotPrice
+          }
+    }"""
+
+    url = "https://api.studio.thegraph.com/query/76011/temple-ramos/version/latest"
     data = get_json_data(url, query)
 
     metrics = data['data']['metrics'][0]
 
-    data_dict = {
-        'treasuryValue': float(metrics['treasuryValueUSD']),
-    }
-
-    return data_dict
-
-
-def get_mainnet_metrics_data():
-    query = """query {
-      metricDailySnapshots(first: 1, orderBy: timestamp, orderDirection: desc) {
-        templePrice
-        treasuryValueUSD
-        treasuryPriceIndex
-      }
-    }"""
-
-    url = "https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-metrics/api"
-    data = get_json_data(url, query)
-
-    metrics = data['data']['metricDailySnapshots'][0]
-
-    data_dict = {
-        'templePrice': roundf(metrics['templePrice'], 3),
-        'treasuryValue': float(metrics['treasuryValueUSD']),
-        'tpi': roundf(metrics['treasuryPriceIndex'], 3),
-    }
-
-    return data_dict
+    return roundf(metrics['spotPrice'], 3)
 
 
 @client.event
@@ -100,16 +91,13 @@ async def on_ready():
 async def _refresh_price():
     logger.info("Refreshing price")
     try:
-        mainnet_data = get_mainnet_metrics_data()
-        arbitrum_data = get_arbitrum_metrics_data()
+        treasury_value = get_tvl()
+        price = get_spot_price()
     except Exception as err:
         logger.exception('Error refreshing price')
         nickname = 'ERROR'
     else:
-        templeprice = mainnet_data['templePrice']
-        treasury_value = millify(mainnet_data['treasuryValue'] + arbitrum_data['treasuryValue'], 1)
-
-        nickname = f'${templeprice} | ${treasury_value}'
+        nickname = f'${roundf(price, 3)} | ${millify(treasury_value, 1)}'
     activity = f'TPI rise'
 
     logger.info("New stats {nickname} || {activity}", nickname=nickname, activity=activity)
