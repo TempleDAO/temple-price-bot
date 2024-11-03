@@ -12,6 +12,7 @@ load_dotenv()
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 REFRESH_RATE_S = int(os.getenv("REFRESH_RATE_S", 90))
+PROVIDER_URL = os.getenv("MAINNET_PROVIDER_URL")
 client = discord.Client()
 
 
@@ -96,7 +97,7 @@ def fetch_tpi():
     address = "0x6008C7D33bC509A6849D6cf3196F38d693d3Ae6A"
     abi = '[{"inputs":[],"name":"treasuryPriceIndex","outputs":[{"internalType":"uint96","name":"","type":"uint96"}],"stateMutability":"view","type":"function"}]'
 
-    w3 = Web3(Web3.HTTPProvider(os.getenv("MAINNET_PROVIDER_URL")))
+    w3 = Web3(Web3.HTTPProvider(PROVIDER_URL))
     contract = w3.eth.contract(address, abi=abi)
 
     tpi = contract.functions.treasuryPriceIndex().call()
