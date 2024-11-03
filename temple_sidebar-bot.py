@@ -1,19 +1,18 @@
+from loguru import logger
 import requests
 import discord
-from discord.ext import tasks, commands
-from discord.ext.commands import Bot
+from discord.ext import tasks
 import os
 from dotenv import load_dotenv
 import math
+from web3 import Web3
+
 load_dotenv()
-from loguru import logger
-import sys
 
 
-TOKEN = os.getenv('DISCORD_TOKEN')
-REFRESH_RATE_S = int(os.getenv('REFRESH_RATE_S', 90))
+TOKEN = os.getenv("DISCORD_TOKEN")
+REFRESH_RATE_S = int(os.getenv("REFRESH_RATE_S", 90))
 client = discord.Client()
-
 
 
 class PriceFetchError(Exception):
@@ -21,28 +20,34 @@ class PriceFetchError(Exception):
 
 
 def millify(n, precision):
-    millnames = ['', 'K', 'M', 'B', 'T']
+    millnames = ["", "K", "M", "B", "T"]
     n = float(n)
-    millidx = max(0, min(len(millnames)-1,
-                         int(math.floor(0 if n == 0 else math.log10(abs(n))/3))))
+    millidx = max(
+        0,
+        min(
+            len(millnames) - 1,
+            int(math.floor(0 if n == 0 else math.log10(abs(n)) / 3))
+        ),
+    )
 
-    return '{:.{precision}f}{}'.format(n / 10**(3 * millidx), millnames[millidx], precision=precision)
+    return "{:.{precision}f}{}".format(
+        n / 10 ** (3 * millidx), millnames[millidx], precision=precision
+    )
 
 
 def roundf(n, precision):
-    return '{:.{precision}f}'.format(float(n), precision=precision)
+    return "{:.{precision}f}".format(float(n), precision=precision)
 
 
 def get_json_data(url, query):
-    response = requests.post(url, json={'query': query})
+    response = requests.post(url, json={"query": query})
 
     try:
         data = response.json()
-    except:
+    except:  # noqa: E722
         raise PriceFetchError("Invalid response from API: {response.text}")
 
-
-    if response.status_code != 200 or 'errors' in data:
+    if response.status_code != 200 or "errors" in data:
         raise PriceFetchError(f"Error fetching price {response.text}")
 
     return data
@@ -61,10 +66,9 @@ def get_tvl():
     url = "https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-balances/api"
 
     data = get_json_data(url, query)
-    metrics = data['data']['treasuryReservesVaults'][0]
-    tvl = float(metrics["principalUSD"]) + float(metrics['benchmarkedEquityUSD'])
+    metrics = data["data"]["treasuryReservesVaults"][0]
+    tvl = float(metrics["principalUSD"]) + float(metrics["benchmarkedEquityUSD"])
     return tvl
-
 
 
 def get_spot_price():
@@ -77,32 +81,54 @@ def get_spot_price():
     url = "https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-ramos/api"
     data = get_json_data(url, query)
 
-    metrics = data['data']['metrics'][0]
+    metrics = data["data"]["metrics"][0]
 
-    return roundf(metrics['spotPrice'], 3)
+    return float(metrics["spotPrice"])
 
 
 @client.event
 async def on_ready():
-    logger.info(f'{client.user} has connected to Discord!')
+    logger.info(f"{client.user} has connected to Discord!")
     refresh_price.start()
+
+
+def fetch_tpi():
+    address = "0x6008C7D33bC509A6849D6cf3196F38d693d3Ae6A"
+    abi = '[{"inputs":[],"name":"treasuryPriceIndex","outputs":[{"internalType":"uint96","name":"","type":"uint96"}],"stateMutability":"view","type":"function"}]'
+
+    w3 = Web3(Web3.HTTPProvider(os.getenv("MAINNET_PROVIDER_URL")))
+    contract = w3.eth.contract(address, abi=abi)
+
+    tpi = contract.functions.treasuryPriceIndex().call()
+
+    return tpi / 1e18
+
+
+def compute_price_premium(spot: float, tpi: float) -> float:
+    return (spot / tpi) - 1
 
 
 async def _refresh_price():
     logger.info("Refreshing price")
     try:
-        treasury_value = get_tvl()
         price = get_spot_price()
+        tpi = fetch_tpi()
+        premium = compute_price_premium(price, tpi)
     except Exception as err:
-        logger.exception('Error refreshing price')
-        nickname = 'ERROR'
+        logger.exception(f"Error refreshing price {err}")
+        nickname = "ERROR"
     else:
-        nickname = f'${roundf(price, 3)} | ${millify(treasury_value, 1)}'
-    activity = f'TPI rise'
+        nickname = f"${roundf(price, 3)} | {premium*100:+.0f}% TPI"
 
-    logger.info("New stats {nickname} || {activity}", nickname=nickname, activity=activity)
+    activity = f"TPI rise: ${roundf(tpi, 4)}"
 
-    await client.change_presence(activity=discord.Activity(name=activity, type=discord.ActivityType.watching))
+    logger.info(
+        "New stats {nickname} || {activity}", nickname=nickname, activity=activity
+    )
+
+    await client.change_presence(
+        activity=discord.Activity(name=activity, type=discord.ActivityType.watching)
+    )
     for guild in client.guilds:
         try:
             await guild.me.edit(nick=nickname)
