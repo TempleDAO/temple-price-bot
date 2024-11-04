@@ -106,7 +106,7 @@ def fetch_tpi():
 
 
 def compute_price_premium(spot: float, tpi: float) -> float:
-    return (spot / tpi) - 1
+    return (spot / tpi)
 
 
 async def _refresh_price():
@@ -119,7 +119,7 @@ async def _refresh_price():
         logger.exception(f"Error refreshing price {err}")
         nickname = "ERROR"
     else:
-        nickname = f"${roundf(price, 3)} | {premium*100:+.0f}% TPI"
+        nickname = f"${roundf(price, 3)} | {premium:.2f}x TPI"
 
     activity = f"TPI rise: ${roundf(tpi, 4)}"
 
