@@ -74,7 +74,7 @@ def get_spot_price():
           }
     }"""
 
-    url = "https://api.studio.thegraph.com/query/76011/temple-ramos/version/latest"
+    url = "https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-ramos/api"
     data = get_json_data(url, query)
 
     metrics = data['data']['metrics'][0]
