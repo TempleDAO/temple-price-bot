@@ -5,7 +5,6 @@ from discord.ext import tasks
 import os
 from dotenv import load_dotenv
 import math
-from web3 import Web3
 
 load_dotenv()
 
@@ -26,8 +25,7 @@ def millify(n, precision):
     millidx = max(
         0,
         min(
-            len(millnames) - 1,
-            int(math.floor(0 if n == 0 else math.log10(abs(n)) / 3))
+            len(millnames) - 1, int(math.floor(0 if n == 0 else math.log10(abs(n)) / 3))
         ),
     )
 
@@ -54,28 +52,11 @@ def get_json_data(url, query):
     return data
 
 
-def get_tvl():
-
-    query = """query MyQuery {
-  treasuryReservesVaults {
-    principalUSD
-    benchmarkedEquityUSD
-  }
-}
-"""
-
-    url = "https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-balances/api"
-
-    data = get_json_data(url, query)
-    metrics = data["data"]["treasuryReservesVaults"][0]
-    tvl = float(metrics["principalUSD"]) + float(metrics["benchmarkedEquityUSD"])
-    return tvl
-
-
-def get_spot_price():
+def get_price():
     query = """query {
           metrics {
             spotPrice
+            treasuryPriceIndexUSD
           }
     }"""
 
@@ -84,7 +65,10 @@ def get_spot_price():
 
     metrics = data["data"]["metrics"][0]
 
-    return float(metrics["spotPrice"])
+    return {
+        "spot_price": float(metrics["spotPrice"]),
+        "tpi": float(metrics["treasuryPriceIndexUSD"]),
+    }
 
 
 @client.event
@@ -93,27 +77,16 @@ async def on_ready():
     refresh_price.start()
 
 
-def fetch_tpi():
-    address = "0x6008C7D33bC509A6849D6cf3196F38d693d3Ae6A"
-    abi = '[{"inputs":[],"name":"treasuryPriceIndex","outputs":[{"internalType":"uint96","name":"","type":"uint96"}],"stateMutability":"view","type":"function"}]'
-
-    w3 = Web3(Web3.HTTPProvider(PROVIDER_URL))
-    contract = w3.eth.contract(address, abi=abi)
-
-    tpi = contract.functions.treasuryPriceIndex().call()
-
-    return tpi / 1e18
-
-
 def compute_price_premium(spot: float, tpi: float) -> float:
-    return (spot / tpi)
+    return spot / tpi
 
 
 async def _refresh_price():
     logger.info("Refreshing price")
     try:
-        price = get_spot_price()
-        tpi = fetch_tpi()
+        metrics = get_price()
+        price = metrics["spot_price"]
+        tpi = metrics["tpi"]
         premium = compute_price_premium(price, tpi)
     except Exception as err:
         logger.exception(f"Error refreshing price {err}")
