@@ -11,7 +11,6 @@ load_dotenv()
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 REFRESH_RATE_S = int(os.getenv("REFRESH_RATE_S", 90))
-PROVIDER_URL = os.getenv("MAINNET_PROVIDER_URL")
 client = discord.Client()
 
 
