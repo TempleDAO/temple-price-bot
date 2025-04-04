@@ -58,13 +58,15 @@ def get_tpi():
           }
     }"""
 
-    url = "https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-mainnet/api"
+    url = (
+        "https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-mainnet/api"
+    )
     data = get_json_data(url, query)
 
     metrics = data["data"]["treasuryReservesVaults"][0]
 
     return {
-        "tpi": float(treasuryReservesVaults["treasuryPriceIndex"]),
+        "tpi": float(metrics["treasuryPriceIndex"]),
     }
 
 
