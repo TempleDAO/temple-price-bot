@@ -51,10 +51,9 @@ def get_json_data(url, query):
     return data
 
 
-def get_price():
+def get_tpi():
     query = """query {
           metrics {
-            spotPrice
             treasuryPriceIndexUSD
           }
     }"""
@@ -65,9 +64,19 @@ def get_price():
     metrics = data["data"]["metrics"][0]
 
     return {
-        "spot_price": float(metrics["spotPrice"]),
         "tpi": float(metrics["treasuryPriceIndexUSD"]),
     }
+
+
+def get_price():
+    req = requests.get(
+        "https://coins.llama.fi/prices/current/ethereum:0x470EBf5f030Ed85Fc1ed4C2d36B9DD02e77CF1b7"
+    )
+    return float(
+        req.json()["coins"]["ethereum:0x470EBf5f030Ed85Fc1ed4C2d36B9DD02e77CF1b7"][
+            "price"
+        ]
+    )
 
 
 @client.event
@@ -83,13 +92,14 @@ def compute_price_premium(spot: float, tpi: float) -> float:
 async def _refresh_price():
     logger.info("Refreshing price")
     try:
-        metrics = get_price()
-        price = metrics["spot_price"]
+        metrics = get_tpi()
+        price = get_price()
         tpi = metrics["tpi"]
         premium = compute_price_premium(price, tpi)
     except Exception as err:
         logger.exception(f"Error refreshing price {err}")
         nickname = "ERROR"
+        tpi = 0
     else:
         nickname = f"${roundf(price, 3)} | {premium:.2f}x TPI"
 
