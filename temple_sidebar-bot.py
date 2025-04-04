@@ -53,18 +53,18 @@ def get_json_data(url, query):
 
 def get_tpi():
     query = """query {
-          metrics {
-            treasuryPriceIndexUSD
+          treasuryReservesVaults {
+            treasuryPriceIndex
           }
     }"""
 
-    url = "https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-ramos/api"
+    url = "https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-mainnet/api"
     data = get_json_data(url, query)
 
-    metrics = data["data"]["metrics"][0]
+    metrics = data["data"]["treasuryReservesVaults"][0]
 
     return {
-        "tpi": float(metrics["treasuryPriceIndexUSD"]),
+        "tpi": float(treasuryReservesVaults["treasuryPriceIndex"]),
     }
 
 
