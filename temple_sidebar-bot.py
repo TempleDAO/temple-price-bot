@@ -51,34 +51,25 @@ def get_json_data(url, query):
     return data
 
 
-def get_tpi():
+def get_price():
     query = """query {
-          treasuryReservesVaults {
+          metrics {
+            templePrice
             treasuryPriceIndex
           }
     }"""
 
     url = (
-        "https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-mainnet/api"
+        "https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-metrics/version/v0.1.4/api"
     )
     data = get_json_data(url, query)
 
-    metrics = data["data"]["treasuryReservesVaults"][0]
+    metrics = data["data"]["metrics"][0]
 
     return {
+        "spot_price": float(metrics["templePrice"]),
         "tpi": float(metrics["treasuryPriceIndex"]),
     }
-
-
-def get_price():
-    req = requests.get(
-        "https://coins.llama.fi/prices/current/ethereum:0x470EBf5f030Ed85Fc1ed4C2d36B9DD02e77CF1b7"
-    )
-    return float(
-        req.json()["coins"]["ethereum:0x470EBf5f030Ed85Fc1ed4C2d36B9DD02e77CF1b7"][
-            "price"
-        ]
-    )
 
 
 @client.event
@@ -94,8 +85,8 @@ def compute_price_premium(spot: float, tpi: float) -> float:
 async def _refresh_price():
     logger.info("Refreshing price")
     try:
-        metrics = get_tpi()
-        price = get_price()
+        metrics = get_price()
+        price = metrics["spot_price"]
         tpi = metrics["tpi"]
         premium = compute_price_premium(price, tpi)
     except Exception as err:
