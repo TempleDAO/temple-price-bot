@@ -60,7 +60,7 @@ def get_price():
     }"""
 
     url = (
-        "https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-metrics/version/v0.1.4/api"
+        "https://api.goldsky.com/api/public/project_cmgzm4q1q009c5np2angrczxw/subgraphs/temple-metrics/prod/gn"
     )
     data = get_json_data(url, query)
 
