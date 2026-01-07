@@ -1,17 +1,13 @@
-from loguru import logger
-import requests
-import discord
-from discord.ext import tasks
-import os
-from dotenv import load_dotenv
 import math
 
-load_dotenv()
+import discord
+import requests
+from discord import Client
+from discord.ext import tasks
+from loguru import logger
 
-
-TOKEN = os.getenv("DISCORD_TOKEN")
-REFRESH_RATE_S = int(os.getenv("REFRESH_RATE_S", 90))
-client = discord.Client()
+from app.bot import update_bot
+from app.utils import roundf
 
 
 class PriceFetchError(Exception):
@@ -31,10 +27,6 @@ def millify(n, precision):
     return "{:.{precision}f}{}".format(
         n / 10 ** (3 * millidx), millnames[millidx], precision=precision
     )
-
-
-def roundf(n, precision):
-    return "{:.{precision}f}".format(float(n), precision=precision)
 
 
 def get_json_data(url, query):
@@ -59,9 +51,7 @@ def get_price():
           }
     }"""
 
-    url = (
-        "https://api.goldsky.com/api/public/project_cmgzm4q1q009c5np2angrczxw/subgraphs/temple-metrics/prod/gn"
-    )
+    url = "https://api.goldsky.com/api/public/project_cmgzm4q1q009c5np2angrczxw/subgraphs/temple-metrics/prod/gn"
     data = get_json_data(url, query)
 
     metrics = data["data"]["metrics"][0]
@@ -72,18 +62,12 @@ def get_price():
     }
 
 
-@client.event
-async def on_ready():
-    logger.info(f"{client.user} has connected to Discord!")
-    refresh_price.start()
-
-
 def compute_price_premium(spot: float, tpi: float) -> float:
     return spot / tpi
 
 
-async def _refresh_price():
-    logger.info("Refreshing price")
+async def refresh_price(client: Client):
+    logger.info("Updating TEMPLE price")
     try:
         metrics = get_price()
         price = metrics["spot_price"]
@@ -97,34 +81,23 @@ async def _refresh_price():
         nickname = f"${roundf(price, 3)} | {premium:.2f}x TPI"
 
     activity = f"TPI rise: ${roundf(tpi, 4)}"
+    await update_bot(client, nickname, activity)
 
-    logger.info(
-        "New stats {nickname} || {activity}", nickname=nickname, activity=activity
-    )
 
-    await client.change_presence(
-        activity=discord.Activity(name=activity, type=discord.ActivityType.watching)
-    )
-    for guild in client.guilds:
+def create_price_bot():
+
+    PRICE_BOT = discord.Client()
+
+    @PRICE_BOT.event
+    async def on_ready():
+        logger.info(f"{PRICE_BOT.user} ready")
+        update_price.start()
+
+    @tasks.loop(seconds=5 * 60)
+    async def update_price():
         try:
-            await guild.me.edit(nick=nickname)
+            await refresh_price(PRICE_BOT)
         except Exception as err:
-            logger.info(f"ERROR: {err} in guild {guild.id} {guild.name}")
+            print(f"ERROR: refreshing price {err}")
 
-
-@tasks.loop(seconds=REFRESH_RATE_S)
-async def refresh_price():
-    try:
-        await _refresh_price()
-    except Exception as err:
-        print(f"ERROR: refreshing price {err}")
-
-
-# text commands
-@client.event
-async def on_message(message):
-    if message.author == client.user:
-        return
-
-
-client.run(TOKEN)
+    return PRICE_BOT
