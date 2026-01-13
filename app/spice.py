@@ -1,5 +1,5 @@
 import datetime
-from typing import TypedDict
+from typing import Literal, TypedDict
 
 import discord
 from discord.ext import tasks
@@ -73,8 +73,11 @@ def get_current_epoch_data(auction: SpiceAuctionConfig) -> CurrentEpochData:
     current_epoch_id: int = contract.functions.currentEpoch().call()
 
     epoch = contract.functions.getEpochInfo(current_epoch_id).call()
-
-    price: float = epoch[2] / epoch[3]
+    bid_token_amount = epoch[2]
+    auction_token_amount = epoch[3]
+    price: float = (
+        bid_token_amount / auction_token_amount if auction_token_amount != 0 else 0
+    )
 
     details = CurrentEpochData(
         price=price,
@@ -90,7 +93,7 @@ async def _update_spice_bot(bot: discord.Client, auction: SpiceAuctionConfig):
     logger.info("Updating spice bot")
     try:
         epoch = get_current_epoch_data(auction)
-        nickname = f"{roundf(epoch['price'], 4)} {auction['ticker']}"
+        nickname = f"{roundf(epoch['price'], 3)} {auction['ticker']}"
 
         activity = f"Epoch {epoch['id']}"
         now = datetime.datetime.now()

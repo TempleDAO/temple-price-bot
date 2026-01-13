@@ -26,14 +26,22 @@ async def main():
         )
 
     if SPICE_BOT_TOKEN:
-        ENA_SPICE_AUCTION = SpiceAuctionConfig(
+        # ENA_SPICE_AUCTION = SpiceAuctionConfig(
+        #     address=Web3.to_checksum_address(
+        #         "0xa68e1a9a93223f812191f35d102a4b2fb16b60f4"
+        #     ),
+        #     ticker="TGLD/$ENA",
+        #     provider_url=MAINNET_RPC_URL,
+        # )
+
+        sENA_SPICE_AUCTION = SpiceAuctionConfig(
             address=Web3.to_checksum_address(
-                "0xa68e1a9a93223f812191f35d102a4b2fb16b60f4"
+                "0x9c6badfDa8854135D316344f196487583F0974C7"
             ),
-            ticker="TGLD/$ENA",
+            ticker="TGLD/sENA",
             provider_url=MAINNET_RPC_URL,
         )
-        SPICE_BOT = create_spice_bot(ENA_SPICE_AUCTION)
+        SPICE_BOT = create_spice_bot(sENA_SPICE_AUCTION)
         tasks.append(SPICE_BOT.start(SPICE_BOT_TOKEN))
 
     await asyncio.gather(*tasks)
