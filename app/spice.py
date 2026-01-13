@@ -93,7 +93,7 @@ async def _update_spice_bot(bot: discord.Client, auction: SpiceAuctionConfig):
     logger.info("Updating spice bot")
     try:
         epoch = get_current_epoch_data(auction)
-        nickname = f"{roundf(epoch['price'], 3)} {auction['ticker']}"
+        nickname = f"{roundf(epoch['price'], 4)} {auction['ticker']}"
 
         activity = f"Epoch {epoch['id']}"
         now = datetime.datetime.now()
