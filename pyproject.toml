@@ -3,6 +3,7 @@ name = "temple-price-bot"
 version = "0.1.0"
 description = ""
 authors = ["Your Name <you@example.com>"]
+packages = [{include = "app"}]
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4"
@@ -10,6 +11,7 @@ python = ">=3.9,<4"
 requests = "^2.27.1"
 python-dotenv = "^0.19.2"
 loguru = "^0.6.0"
+web3 = "^7.14.0"
 
 [tool.poetry.dev-dependencies]
 
